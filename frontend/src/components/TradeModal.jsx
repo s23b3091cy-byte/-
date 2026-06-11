@@ -1,17 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, AlertTriangle, CheckCircle } from 'lucide-react'
 import { DISCLAIMER } from '../data/mockData'
 
 export default function TradeModal({ pair, rate, tradeType, onClose }) {
   const [units, setUnits] = useState(1000)
   const [confirmed, setConfirmed] = useState(false)
+  const [countdown, setCountdown] = useState(3)
 
   const isBuy = tradeType === 'buy'
   const cost = (units * rate).toLocaleString('ja-JP', { maximumFractionDigits: 0 })
 
+  // 確認後のカウントダウン自動クローズ
+  useEffect(() => {
+    if (!confirmed) return
+    if (countdown <= 0) { onClose(); return }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [confirmed, countdown, onClose])
+
   function handleConfirm() {
     setConfirmed(true)
-    setTimeout(onClose, 2000)
   }
 
   if (confirmed) {
@@ -21,6 +29,17 @@ export default function TradeModal({ pair, rate, tradeType, onClose }) {
           <CheckCircle size={56} className="text-emerald-500" />
           <p className="text-lg font-bold text-gray-800">注文を受け付けました</p>
           <p className="text-sm text-gray-500">※デモ取引のため実際の売買は行われません</p>
+
+          {/* 自動クローズのカウントダウン表示 */}
+          <p className="text-xs text-gray-400">{countdown}秒後に自動で閉じます</p>
+
+          {/* 手動で即閉じるボタン */}
+          <button
+            onClick={onClose}
+            className="btn-primary w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm"
+          >
+            閉じる
+          </button>
         </div>
       </ModalWrapper>
     )
@@ -34,7 +53,7 @@ export default function TradeModal({ pair, rate, tradeType, onClose }) {
           <h2 className="text-lg font-bold text-gray-900">
             {pair} {isBuy ? '買い' : '売り'}注文
           </h2>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -76,13 +95,21 @@ export default function TradeModal({ pair, rate, tradeType, onClose }) {
           <p className="text-xs text-amber-700 leading-relaxed">{DISCLAIMER}</p>
         </div>
 
-        {/* 確認ボタン */}
+        {/* 注文確定ボタン */}
         <button
           onClick={handleConfirm}
           className={`btn-primary w-full py-4 text-white text-base
             ${isBuy ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'}`}
         >
           {isBuy ? '買い注文を確定する' : '売り注文を確定する'}
+        </button>
+
+        {/* ← キャンセルボタンを追加 */}
+        <button
+          onClick={onClose}
+          className="btn-primary w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm"
+        >
+          キャンセル（やめる）
         </button>
 
         <p className="text-center text-xs text-gray-400">※これはデモアプリです</p>

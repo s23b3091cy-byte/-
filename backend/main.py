@@ -173,6 +173,60 @@ async def predict_with_data(pair_id: str, body: PredictRequest):
     return _result_to_response(pair_id, result)
 
 
+# ---- 意思決定支援エンジン（Phase 1：シグナル専用・発注なし）-----------------
+
+from engine import analyze as engine_analyze
+from engine.mock import make_trend, make_range, make_high_vol
+from engine.types import AccountState, RiskConfig, Candle
+
+
+class AccountStateBody(BaseModel):
+    equity: float = 100_000
+    open_positions: int = 0
+    realized_pnl_today: float = 0.0
+    consecutive_losses: int = 0
+
+
+# Phase 1 デモ用：ペアごとに異なる相場シナリオのモックを割り当てる
+_SCENARIOS = {
+    "usdjpy": lambda: make_trend(base=156.8, up=True),
+    "eurjpy": lambda: make_high_vol(base=169.4),
+    "gbpjpy": lambda: make_range(base=198.3),
+}
+
+
+@app.get("/api/signal/{pair_id}", tags=["decision-engine"])
+async def get_signal(pair_id: str):
+    """
+    意思決定支援エンジンのシグナルを返す（参考情報・発注なし）。
+    Phase 1 のためモック相場を使用。実運用では Market Data API に差し替える。
+    """
+    if pair_id not in PAIRS_CONFIG:
+        raise HTTPException(status_code=404, detail=f"未対応の通貨ペア: {pair_id}")
+
+    candles = _SCENARIOS[pair_id]()
+    account = AccountState(equity=100_000)
+    result = engine_analyze(PAIRS_CONFIG[pair_id]["label"], candles, account, calendar=[])
+    return result.to_dict()
+
+
+@app.post("/api/signal/{pair_id}", tags=["decision-engine"])
+async def post_signal(pair_id: str, account: AccountStateBody):
+    """口座状態を受け取ってシグナルを返す（Risk Gate を実状態で評価）。"""
+    if pair_id not in PAIRS_CONFIG:
+        raise HTTPException(status_code=404, detail=f"未対応の通貨ペア: {pair_id}")
+
+    candles = _SCENARIOS[pair_id]()
+    acct = AccountState(
+        equity=account.equity,
+        open_positions=account.open_positions,
+        realized_pnl_today=account.realized_pnl_today,
+        consecutive_losses=account.consecutive_losses,
+    )
+    result = engine_analyze(PAIRS_CONFIG[pair_id]["label"], candles, acct, calendar=[])
+    return result.to_dict()
+
+
 @app.get("/health", tags=["system"])
 async def health():
     return {"status": "ok", "models_loaded": list(_predictors.keys())}

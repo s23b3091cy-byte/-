@@ -4,7 +4,7 @@ import RateCard from '../components/RateCard'
 import PortfolioSummary from '../components/PortfolioSummary'
 import { CURRENCY_PAIRS } from '../data/mockData'
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const [lastUpdated] = useState(new Date().toLocaleTimeString('ja-JP'))
   const [refreshing, setRefreshing] = useState(false)
 
@@ -65,7 +65,10 @@ export default function Dashboard() {
         </section>
 
         {/* 学習コンテンツへの誘導 */}
-        <div className="card p-4 flex items-center gap-3">
+        <button
+          onClick={() => onNavigate?.('learn')}
+          className="card p-4 flex items-center gap-3 w-full text-left hover:bg-gray-50 transition-colors"
+        >
           <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-xl shrink-0">
             📚
           </div>
@@ -74,7 +77,7 @@ export default function Dashboard() {
             <p className="text-xs text-gray-500 mt-0.5">5分でわかる為替入門</p>
           </div>
           <span className="text-xs text-blue-600 font-medium shrink-0">→ 見る</span>
-        </div>
+        </button>
 
         {/* 免責事項フッター */}
         <p className="text-xs text-gray-400 leading-relaxed text-center px-2">

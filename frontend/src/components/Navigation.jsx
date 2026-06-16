@@ -1,9 +1,9 @@
-import { LayoutDashboard, TrendingUp, BookOpen, Swords, User } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, ShieldCheck, Swords, User } from 'lucide-react'
 
 const NAV_ITEMS = [
   { id: 'home',   icon: LayoutDashboard, label: 'ホーム' },
   { id: 'chart',  icon: TrendingUp,      label: 'チャート' },
-  { id: 'learn',  icon: BookOpen,        label: '学習' },
+  { id: 'engine', icon: ShieldCheck,     label: '判定' },
   { id: 'game',   icon: Swords,          label: '対決' },
   { id: 'mypage', icon: User,            label: 'マイページ' },
 ]
